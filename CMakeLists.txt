@@ -2,10 +2,38 @@
 # Ryan Pavlik <rpavlik@iastate.edu>
 # http://academic.cleardefinition.com/
 # Iowa State University HCI Graduate Program/VRAC
+# Update build script by Dennis Luxen, Project OSRM
 
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+include(FindPackageHandleStandardArgs)
 project(LuaBind)
+
+# Check the release mode
+if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
+	set(CMAKE_BUILD_TYPE Release)
+	set(BUILD_TESTING 0)
+endif(NOT CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    message(STATUS "Configuring luabind in debug mode")
+    message(STATUS "Enabling unit tests")
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    message(STATUS "Configuring luabind in release mode")
+    message(STATUS "Disabling unit tests")
+endif(CMAKE_BUILD_TYPE MATCHES Release)
+
+add_definitions( "-Wall" )
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  # using Clang
+  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  # using GCC
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+  # using Intel C++
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  # using Visual Studio C++
+endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "9")
