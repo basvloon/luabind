@@ -5,7 +5,7 @@ compiler:
 # Make sure CMake is installed
 install:
  - sudo apt-get update >/dev/null
- - sudo apt-get -q install cmake valgrind
+ - sudo apt-get -q install cmake liblua5.1-0-dev
 before_script:
  - mkdir build
  - cd build
