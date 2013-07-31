@@ -17,7 +17,7 @@ branches:
 notifications:
  irc:
   channels:
-    - irc.freenode.net#osrm
+    - irc.oftc.net#osrm
   on_success: change
   on_failure: always
   use_notice: true
