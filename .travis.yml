@@ -1,0 +1,30 @@
+language: cpp
+compiler:
+  - gcc
+  - clang
+# Make sure CMake is installed
+install:
+ - sudo apt-get update >/dev/null
+ - sudo apt-get -q install cmake valgrind
+before_script:
+ - mkdir build
+ - cd build
+ - cmake ..
+script: make
+branches:
+  only:
+    - master
+notifications:
+ irc:
+  channels:
+    - irc.freenode.net#osrm
+  on_success: change
+  on_failure: always
+  use_notice: true
+  skip_join: true
+
+  recipients:
+    - dennis@mapbox.com
+  email:
+    on_success: change
+    on_failure: always
