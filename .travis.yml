@@ -1,7 +1,7 @@
 language: cpp
 compiler:
   - gcc
-  - clang
+#  - clang
 # Make sure CMake is installed
 install:
  - sudo apt-get update >/dev/null
