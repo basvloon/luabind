@@ -24,15 +24,16 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
 endif(CMAKE_BUILD_TYPE MATCHES Release)
 
 add_definitions( "-Wall" )
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  # using Clang
-  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  # using GCC
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  # using Intel C++
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  # using Visual Studio C++
+# Configuring other platform dependencies
+if(APPLE)
+    SET(CMAKE_OSX_ARCHITECTURES "x86_64")
+    message(STATUS "Set Architecture to x64 on OS X")
+    EXEC_PROGRAM(uname ARGS -v  OUTPUT_VARIABLE DARWIN_VERSION)
+    STRING(REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
+    IF (DARWIN_VERSION GREATER 12)
+        MESSAGE(STATUS "Activating -std=c++11 flag for >= OS X 10.9")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+    ENDIF (DARWIN_VERSION GREATER 12)
 endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
