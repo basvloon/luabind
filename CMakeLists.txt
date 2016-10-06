@@ -9,6 +9,8 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
 include(FindPackageHandleStandardArgs)
 project(LuaBind)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Check the release mode
 if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
 	set(CMAKE_BUILD_TYPE Release)
@@ -54,9 +56,16 @@ if(NOT Boost_FOUND)
 	find_package(Boost REQUIRED)
 endif()
 
-if(NOT LUA_FOUND AND NOT LUA51_FOUND)
-	find_package(Lua51 REQUIRED)
-	set(LUA_INCLUDE_DIRS "${LUA_INCLUDE_DIR}")
+find_package(Lua 5.2 EXACT)
+if(LUA_FOUND)
+  message ( STATUS "Found lua 5.2")
+else()
+  find_package(Lua 5.1 EXACT)
+  if (LUA_FOUND)
+    message ( STATUS "Found lua 5.1")
+  else()
+    message (FATAL_ERROR "Lua 5.2 or Lua 5.1 was not found.")
+  endif()
 endif()
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -73,7 +82,7 @@ endif()
 
 include_directories(${Boost_INCLUDE_DIRS}
 	"${CMAKE_CURRENT_SOURCE_DIR}"
-	${LUA_INCLUDE_DIRS})
+	${LUA_INCLUDE_DIR})
 
 add_subdirectory(src)
 
