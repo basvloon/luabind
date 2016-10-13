@@ -56,6 +56,8 @@ if(NOT Boost_FOUND)
 	find_package(Boost REQUIRED)
 endif()
 
+# first try finding lua with exact
+# depending on cmake version, this may or may not match patch versions
 find_package(Lua 5.2 EXACT)
 if(LUA_FOUND)
   message ( STATUS "Found lua 5.2")
@@ -64,7 +66,19 @@ else()
   if (LUA_FOUND)
     message ( STATUS "Found lua 5.1")
   else()
-    message (FATAL_ERROR "Lua 5.2 or Lua 5.1 was not found.")
+    # fallback to lua version without exact
+    # this cmake version will force patch versions
+    FIND_PACKAGE(Lua 5.2)
+    if(LUA_FOUND)
+        message ( STATUS "Found lua 5.2")
+    else()
+        FIND_PACKAGE(Lua 5.1)
+        if(LUA_FOUND)
+            message ( STATUS "Found lua 5.1")
+        else()
+            message(FATAL_ERROR "Lua 5.1 or 5.2 was not found.")
+        endif()
+    endif()
   endif()
 endif()
 
