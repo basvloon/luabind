@@ -27,9 +27,7 @@
 #include <luabind/detail/debug.hpp>
 #include <luabind/error.hpp>
 #include <luabind/operator.hpp>
-
-#include <boost/lexical_cast.hpp>
-
+#include <luabind/lua_iterator_proxy.hpp>
 #include <utility>
 
 using namespace luabind;
@@ -184,16 +182,16 @@ void test_upvalues(lua_State* L)
 	object f(from_stack(L, -1));
 	lua_pop(L, 1);
 
-	assert(getupvalue(f, 1) == 3);
-	assert(getupvalue(f, 2) == 4);
+	assert(std::get<1>(getupvalue(f, 1)) == 3);
+	assert(std::get<1>(getupvalue(f, 2)) == 4);
 
 	setupvalue(f, 1, object(L, 4));
-	assert(getupvalue(f, 1) == 4);
-	assert(getupvalue(f, 2) == 4);
+	assert(std::get<1>(getupvalue(f, 1)) == 4);
+	assert(std::get<1>(getupvalue(f, 2)) == 4);
 
 	setupvalue(f, 2, object(L, 5));
-	assert(getupvalue(f, 1) == 4);
-	assert(getupvalue(f, 2) == 5);
+	assert(std::get<1>(getupvalue(f, 1)) == 4);
+	assert(std::get<1>(getupvalue(f, 2)) == 5);
 }
 
 void test_explicit_conversions(lua_State* L)
@@ -333,7 +331,7 @@ void test_main(lua_State* L)
 	obj = luabind::object();
 
 	// call the function and tell lua to adopt the pointer passed as first argument
-	test_param_policies(5, new test_param())[adopt(_2)];
+	test_param_policies.call<adopt_policy<2>>(5, new test_param());
 
 	DOSTRING(L, "assert(test_match(7) == 1)");
 	DOSTRING(L, "assert(test_match('oo') == 0)");
@@ -349,7 +347,7 @@ void test_main(lua_State* L)
 		"return 6\n"
 		"end");
 	object test_object_policies = g["test_object_policies"];
-	object ret_val = test_object_policies("teststring")[detail::null_type()];
+	object ret_val = test_object_policies.call<no_policies>("teststring");
 	TEST_CHECK(object_cast<int>(ret_val) == 6);
 	TEST_CHECK(ret_val == 6);
 	TEST_CHECK(6 == ret_val);
@@ -359,9 +357,9 @@ void test_main(lua_State* L)
 	TEST_CHECK(ret_val == temp_val);
 
 	g["temp"] = "test string";
-	TEST_CHECK(boost::lexical_cast<std::string>(g["temp"]) == "test string");
+	TEST_CHECK(to_string(g["temp"]) == "test string");
 	g["temp"] = 6;
-	TEST_CHECK(boost::lexical_cast<std::string>(g["temp"]) == "6");
+	TEST_CHECK(to_string(g["temp"]) == "6");
 
 	TEST_CHECK(object_cast<std::string>(g["glob"]) == "teststring");
 	TEST_CHECK(object_cast<std::string>(gettable(g, "glob")) == "teststring");
@@ -420,9 +418,9 @@ void test_main(lua_State* L)
 #endif
 
     object not_initialized;
-    TEST_CHECK(!object_cast_nothrow<int>(not_initialized));
-	 TEST_CHECK(!not_initialized.is_valid());
-	 TEST_CHECK(!not_initialized);
+    TEST_CHECK(!object_cast_nothrow<int>(not_initialized, 0));
+	TEST_CHECK(!not_initialized.is_valid());
+	TEST_CHECK(!not_initialized);
 
     DOSTRING(L, "t = { {1}, {2}, {3}, {4} }");
 

@@ -37,7 +37,7 @@ void test_main(lua_State* L)
         class_<X>("X")
             .def(constructor<>()),
 
-        class_<Y, Y_wrap>("Y")
+        class_<Y, no_bases, default_holder, Y_wrap>("Y")
             .def(constructor<>())
     ];
 
@@ -64,3 +64,4 @@ void test_main(lua_State* L)
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     }
 }
+

@@ -1,4 +1,4 @@
-// Copyright (c) 2005 Daniel Wallin and Arvid Norberg
+// Copyright (c) 2003 Daniel Wallin and Arvid Norberg
 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -20,25 +20,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef MOST_DERIVED_051018_HPP
-# define MOST_DERIVED_051018_HPP
+#ifndef LUABIND_CALL_SHARED_HPP_INCLUDED
+#define LUABIND_CALL_SHARED_HPP_INCLUDED
 
-# include <boost/mpl/if.hpp>
-# include <boost/type_traits/is_base_and_derived.hpp>
+namespace luabind {
+	namespace detail {
 
-namespace luabind { namespace detail {
+		inline void call_error(lua_State* L)
+		{
+#ifndef LUABIND_NO_EXCEPTIONS
+			throw luabind::error(L);
+#else
+			error_callback_fun e = get_error_callback();
+			if(e) e(L);
 
-template<class Class, class WrappedClass>
-struct most_derived
-{
-    typedef typename boost::mpl::if_<
-        boost::is_base_and_derived<Class, WrappedClass>
-      , WrappedClass
-      , Class
-    >::type type;
-};
+			assert(0 && "the lua function threw an error and exceptions are disabled."
+				" If you want to handle the error you can use luabind::set_error_callback()");
+			std::terminate();
+#endif
+		}
 
-}} // namespace luabind::detail
+		template<typename T>
+		void cast_error(lua_State* L)
+		{
+#ifndef LUABIND_NO_EXCEPTIONS
+			throw cast_failed(L, typeid(T));
+#else
+			cast_failed_callback_fun e = get_cast_failed_callback();
+			if(e) e(L, typeid(T));
 
-#endif // MOST_DERIVED_051018_HPP
+			assert(0 && "the lua function's return value could not be converted."
+				" If you want to handle the error you can use luabind::set_cast_failed_callback()");
+			std::terminate();
+#endif
+		}
 
+		template< typename... Args >
+		void expand_hack(Args... /*args*/)
+		{}
+
+	}
+}
+
+#endif

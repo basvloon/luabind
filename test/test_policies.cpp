@@ -22,13 +22,14 @@
 
 #include "test.hpp"
 
+#include <luabind/luabind.hpp>
 #include <luabind/out_value_policy.hpp>
 #include <luabind/return_reference_to_policy.hpp>
 #include <luabind/copy_policy.hpp>
 #include <luabind/adopt_policy.hpp>
 #include <luabind/discard_result_policy.hpp>
 #include <luabind/dependency_policy.hpp>
-#include <luabind/luabind.hpp>
+
 
 struct test_copy {};
 
@@ -57,17 +58,33 @@ struct policies_test_class
 	{
 		delete p;
 	}
-	const policies_test_class* internal_ref() { return this; }
+	
+	const policies_test_class* internal_ref() {
+		return this;
+	}
+	
 	policies_test_class* self_ref()
-	{ return this; }
+	{ 
+		return this;
+	}
 
 	static int count;
 
 	//	private:
-	policies_test_class(policies_test_class const& c): name_(c.name_)
-	{ ++count; }
+	policies_test_class(policies_test_class const& c)
+		: name_(c.name_)
+	{ 
+		++count;
+	}
 
-	void member_out_val(int a, int* v) { *v = a * 2; }
+	void member_pure_out_val(int a, int* v) {
+		*v = a * 2;
+	}
+	
+	void member_out_val(int a, int* v) { 
+		*v *= a;
+	}
+
 	secret_type* member_secret() { return &sec_; }
 };
 
@@ -103,6 +120,22 @@ struct MI2 : public MI1
 
 struct MI2W : public MI2, public luabind::wrap_base {};
 
+
+void function_test1(std::function<void(int, int)> func) {
+	func(3, 4);
+}
+
+
+int function_test2_impl(int a, int b)
+{
+	return a+b;
+}
+
+std::function<int(int, int)> function_test2()
+{
+	return std::function<int(int, int)>(function_test2_impl);
+}
+
 void test_main(lua_State* L)
 {
 	using namespace luabind;
@@ -110,31 +143,35 @@ void test_main(lua_State* L)
 	module(L)
 	[
 		class_<test_t>("test_t")
-		.def("make", &test_t::make, adopt(return_value))
-		.def("take", &test_t::take, adopt(_2))
+		.def("make", &test_t::make, adopt_policy<0>())
+		.def("take", &test_t::take, adopt_policy<2>())
 	];
 	
 	module(L)
 	[
 		class_<policies_test_class>("test")
 			.def(constructor<>())
-			.def("member_out_val", &policies_test_class::member_out_val, pure_out_value(_3))
-			.def("member_secret", &policies_test_class::member_secret, discard_result)
-			.def("f", &policies_test_class::f, adopt(_2))
-			.def("make", &policies_test_class::make, adopt(return_value))
-			.def("internal_ref", &policies_test_class::internal_ref, dependency(result, _1))
-			.def("self_ref", &policies_test_class::self_ref, return_reference_to(_1)),
+			.def("member_pure_out_val", &policies_test_class::member_pure_out_val, pure_out_value<3>())
+			.def("member_out_val", &policies_test_class::member_out_val, out_value<3>())
+			.def("member_secret", &policies_test_class::member_secret, discard_result())
+			.def("f", &policies_test_class::f, adopt_policy<2>())
+			.def("make", &policies_test_class::make, adopt_policy<0>())
+			.def("internal_ref", &policies_test_class::internal_ref, dependency_policy<0,1>())
+			.def("self_ref", &policies_test_class::self_ref, return_reference_to<1>()),
 
-		def("out_val", &out_val, pure_out_value(_1)),
-		def("copy_val", &copy_val, copy(result)),
-		def("copy_val_const", &copy_val_const, copy(result)),
-		def("secret", &secret, discard_result),
+		def("out_val", &out_val, pure_out_value<1>()),
+		def("copy_val", &copy_val, copy_policy<0>()),
+		def("copy_val_const", &copy_val_const, copy_policy<0>()),
+		def("secret", &secret, discard_result()),
+
+		def("function_test1", &function_test1),
+		def("function_test2", &function_test2),
 
 		class_<MI1>("mi1")
 			.def(constructor<>())
-			.def("add",&MI1::add,adopt(_2)),
+			.def("add",&MI1::add,adopt_policy<2>()),
 
-		class_<MI2,MI2W,MI1>("mi2")
+		class_<MI2,MI1,default_holder,MI2W>("mi2")
 			.def(constructor<>())
 	];
 
@@ -169,6 +206,7 @@ void test_main(lua_State* L)
 		"a = nil\n"
 		"collectgarbage()");
 
+	// This one goes wrong
 	// a is kept alive as long as b is alive
 	TEST_CHECK(policies_test_class::count == 2);
 
@@ -205,7 +243,8 @@ void test_main(lua_State* L)
 	TEST_CHECK(policies_test_class::count == 2);
 
 	DOSTRING(L, "b = a:make('tjosan')");
-	DOSTRING(L, "assert(a:member_out_val(3) == 6)");
+	DOSTRING(L, "assert(a:member_pure_out_val(3) == 6)");
+	DOSTRING(L, "assert(a:member_out_val(3,2) == 6)");
 	DOSTRING(L, "a:member_secret()");
 
 	// make instantiated a new policies_test_class
@@ -223,5 +262,18 @@ void test_main(lua_State* L)
 
 	// adopt with wrappers
 	DOSTRING(L, "mi1():add(mi2())");
+
+	// function converter
+	DOSTRING(L,
+		"result = nil\n"
+		"test = function( a, b ) result = a + b; end\n"
+		"function_test1( test )\n"
+		"assert(result == 7)\n"
+		);
+
+	DOSTRING(L,
+			 "local func = function_test2()\n"
+			 "assert(func(4,5)==9)"
+		);
 }
 

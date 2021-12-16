@@ -44,6 +44,11 @@ int f(int x, int y)
     return x + y;
 }
 
+int string_length(std::string v)
+{
+	return v.length();
+}
+
 base* create_base()
 {
     return new base();
@@ -95,15 +100,11 @@ void test_main(lua_State* L)
 
         def("f", (int(*)(int)) &f),
         def("f", (int(*)(int, int)) &f),
-        def("create", &create_base, adopt(return_value))
-//        def("set_functor", &set_functor)
-            
-#if !(BOOST_MSVC < 1300)
-        ,
+        def("create", &create_base, adopt_policy<0>()),
+		def("string_length", &string_length),
         def("test_value_converter", &test_value_converter),
         def("test_pointer_converter", &test_pointer_converter)
-#endif
-            
+  
     ];
 
     DOSTRING(L,
@@ -121,13 +122,20 @@ void test_main(lua_State* L)
 //    DOSTRING(L, "set_functor(nil)");
 
     DOSTRING(L, "function lua_create() return create() end");
-    base* ptr = call_function<base*>(L, "lua_create") [ adopt(result) ];
+    base* ptr = call_function<base*,adopt_policy<0>>(L, "lua_create");
     delete ptr;
 
-#if !(BOOST_MSVC < 1300)
+	int Arg0=1;
+	TEST_CHECK(call_function<int>(L, "f", Arg0)==2);
+
+	std::string Arg1="lua means moon";
+	TEST_CHECK(call_function<int>(L, "string_length", Arg1)==14);
+
+	double Arg2=2;
+	TEST_CHECK(call_function<int>(L, "f", Arg2)==3);
+	
     DOSTRING(L, "test_value_converter('converted string')");
     DOSTRING(L, "test_pointer_converter('converted string')");
-#endif
 
     DOSTRING_EXPECTED(L, "f('incorrect', 'parameters')",
         "No matching overload found, candidates:\n"
@@ -135,7 +143,8 @@ void test_main(lua_State* L)
         "int f(int)");
 
 
-    DOSTRING(L, "function failing_fun() error('expected error message') end");
+	DOSTRING(L, "function failing_fun() error('expected error message') end");
+
     try
     {
         call_function<void>(L, "failing_fun");
@@ -143,19 +152,17 @@ void test_main(lua_State* L)
     }
     catch(luabind::error const& e)
     {
+        if (std::string("[string \"function failing_fun() error('expected error ...\"]:1: expected error message") != e.what())
         if (std::string("[string \"function failing_fun() error('expected "
 #if LUA_VERSION_NUM >= 502
             "error ..."
 #else
             "erro..."
 #endif
-            "\"]:1: expected error message") != lua_tostring(L, -1))
+            "\"]:1: expected error message") != e.what())
         {
             TEST_ERROR("function failed with unexpected error message");
         }
-
-        lua_pop(L, 1);
     }
-
 }
 

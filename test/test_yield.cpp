@@ -22,7 +22,6 @@
 
 #include "test.hpp"
 #include <luabind/luabind.hpp>
-#include <boost/mpl/if.hpp>             // for if_<>::type
 
 struct test_class : counted_type<test_class>
 {
@@ -56,7 +55,7 @@ void test_main(lua_State* L)
 	[
 		class_<test_class>("test")
 			.def(constructor<>())
-			.def("f", &test_class::f, luabind::yield)
+			.def("f", &test_class::f, yield())
 	];
 
 	DOSTRING(L,

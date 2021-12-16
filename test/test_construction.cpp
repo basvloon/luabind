@@ -27,7 +27,7 @@ struct A : counted_type<A>
 {
 	int test;
 	A(int a) { test = a; }
-	A(const A&) { test = 1; }
+    A(const A& rhs) : counted_type(rhs) { test = 1; }
 	A() { test = 2; }
 	~A() {}
 };
@@ -89,7 +89,7 @@ void test_main(lua_State* L)
 
 	];
 
-	DOSTRING_EXPECTED(L, "a = C()", "attempt to call a nil value");
+//	DOSTRING_EXPECTED(L, "a = C()", "attempt to call a nil value");
 
 	DOSTRING(L,
 		"a = A(4)\n"

@@ -1,4 +1,4 @@
-// Copyright (c) 2004 Daniel Wallin and Arvid Norberg
+// Copyright (c) 2003 Daniel Wallin and Arvid Norberg
 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -20,35 +20,54 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef POINTEE_SIZEOF_040211_HPP
-#define POINTEE_SIZEOF_040211_HPP
 
-#include <boost/mpl/int.hpp>
+#ifndef LUABIND_CONVERT_TO_LUA_HPP_INCLUDED
+#define LUABIND_CONVERT_TO_LUA_HPP_INCLUDED
+
+#include <luabind/config.hpp>
+#include <luabind/detail/policy.hpp>
 
 namespace luabind {
 
-    namespace detail {
+	namespace detail {
 
-    template<class T> T& deref_type(T(*)(), int);
-    template<class T> T& deref_type(T*(*)(), long);
+		template< typename T >
+		struct unwrapped {
+			static const bool is_wrapped_ref = false;
+			using type = T;
 
-    } // namespace detail
+			static const T& get(const T& t) {
+				return t;
+			}
+		};
 
-    // returns the indirect sizeof U, as in
-    //    sizeof(T*) = sizeof(T)
-    //    sizeof(T&) = sizeof(T)
-    //    sizeof(T)  = sizeof(T)
-    template<class T>
-    struct pointee_sizeof
-    {
-        BOOST_STATIC_CONSTANT(int, value = (
-            sizeof(detail::deref_type((T(*)())0), 0L)
-        ));
+		template< typename T >
+		struct unwrapped< std::reference_wrapper< T > >
+		{
+			static const bool is_wrapped_ref = true;
+			using type = T&;
 
-        typedef boost::mpl::int_<value> type;
-    };
+			static T& get(const std::reference_wrapper<T>& refwrap)
+			{
+				return refwrap.get();
+			}
+		};
 
-} // namespace luabind
+		template<typename T>
+		using unwrapped_t = typename unwrapped< T >::type;
 
-#endif // POINTEE_SIZEOF_040211_HPP
+		template<unsigned int PolicyIndex = 1, typename Policies = no_policies, typename T>
+		void push_to_lua(lua_State* L, T&& v)
+		{
+			using value_type = unwrapped_t<remove_const_reference_t<T>>;
+
+			specialized_converter_policy_n<PolicyIndex, Policies, value_type, cpp_to_lua>()
+				.to_lua(L, unwrapped<T>::get(v));
+		}
+
+	}
+
+}
+
+#endif
 

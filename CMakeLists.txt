@@ -4,9 +4,7 @@
 # Iowa State University HCI Graduate Program/VRAC
 # Update build script by Dennis Luxen, Project OSRM
 
-cmake_minimum_required(VERSION 2.8)
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
-include(FindPackageHandleStandardArgs)
+cmake_minimum_required(VERSION 3.0)
 project(LuaBind)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -49,12 +47,11 @@ endif()
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "9")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
-set(CPACK_PACKAGE_VERSION
-	"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 
-if(NOT Boost_FOUND)
-	find_package(Boost REQUIRED)
-endif()
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # first try finding lua with exact
 # depending on cmake version, this may or may not match patch versions
@@ -84,25 +81,40 @@ endif()
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	# We are the top-level project
-	option(INSTALL_LUABIND "Install the LuaBind library and headers" ON)
-	option(BUILD_SHARED_LUABIND "Build luabind as a shared library?" OFF)
-#	include(CTest)
+	include(CTest)
+	option(LUABIND_INSTALL "Install the LuaBind library and headers" ON)
+	option(LUABIND_BUILD_DOCS "Build documentation files" OFF)
+	option(LUABIND_BUILD_SHARED "Build luabind as a shared library?" OFF)
 endif()
 
-set(BUILD_SHARED_LIBS ${BUILD_SHARED_LUABIND})
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	# Requiring C++11
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+if(MSVC)
+	# Requiring C++11
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++11")
+#	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /std:c++11")
+endif()
+
+set(BUILD_SHARED_LIBS ${LUABIND_BUILD_SHARED})
 if(BUILD_SHARED_LIBS)
 	add_definitions(-DLUABIND_DYNAMIC_LINK)
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS}
+include_directories(
 	"${CMAKE_CURRENT_SOURCE_DIR}"
-	${LUA_INCLUDE_DIR})
+	${LUA_INCLUDE_DIRS}
+)
 
 add_subdirectory(src)
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-	if(BUILD_TESTING)
-		add_subdirectory(test)
-	endif()
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
+
+if(LUABIND_BUILD_DOCS)
 	add_subdirectory(doc)
 endif()
+

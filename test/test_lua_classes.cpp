@@ -25,7 +25,8 @@
 #include <luabind/luabind.hpp>
 #include <luabind/wrapper_base.hpp>
 #include <luabind/adopt_policy.hpp>
-#include <boost/shared_ptr.hpp>
+#include <luabind/detail/debug.hpp>
+#include <memory>
 
 namespace luabind {
 
@@ -137,19 +138,19 @@ void test_main(lua_State* L)
 {
 	module(L)
 	[
-		class_<A, A_wrap, boost::shared_ptr<A> >("A")
+		class_<A, no_bases, std::shared_ptr<A>, A_wrap>("A")
 			.def(constructor<>())
 			.def("f", &A::f, &A_wrap::default_f)
 			.def("g", &A::g, &A_wrap::default_g),
 
-		class_<B, A, B_wrap, boost::shared_ptr<A> >("B")
+		class_<B, A, std::shared_ptr<A>, B_wrap >("B")
 			.def(constructor<>())
 			.def("f", &B::f, &B_wrap::default_f)
 			.def("g", &B::g, &B_wrap::default_g),
 
         def("filter", &filter),
 
-        class_<base, base_wrap>("base")
+        class_<base, no_bases, default_holder, base_wrap>("base")
 			.def(constructor<>())
 			.def("f", &base::f, &base_wrap::default_f)
 			.def("g", &base::g),
@@ -235,13 +236,11 @@ void test_main(lua_State* L)
 		LUABIND_CHECK_STACK(L);
 
 		try { call_function<int>(L, "gen_error"); }
-		catch (luabind::error&)
+		catch (luabind::error const& e)
 		{
-            bool result(
-                lua_tostring(L, -1) == std::string("[string \"function "
+            bool result(e.what() == std::string("[string \"function "
                     "gen_error()...\"]:2: assertion failed!"));
 			TEST_CHECK(result);
-			lua_pop(L, 1);
 		}
 	}
 
@@ -249,34 +248,32 @@ void test_main(lua_State* L)
 		A a;
 
 		DOSTRING(L, "function test_ref(x) end");
-		call_function<void>(L, "test_ref", boost::ref(a));
+		call_function<void>(L, "test_ref", std::ref(a));
 	}
 
 	{
 		LUABIND_CHECK_STACK(L);
 
 		try { call_function<void>(L, "gen_error"); }
-		catch (luabind::error&)
+		catch (luabind::error const& e)
 		{
             bool result(
-                lua_tostring(L, -1) == std::string("[string \"function "
+                e.what() == std::string("[string \"function "
                     "gen_error()...\"]:2: assertion failed!"));
 			TEST_CHECK(result);
-			lua_pop(L, 1);
 		}
 	}
 
 	{
 		LUABIND_CHECK_STACK(L);
 
-		try { call_function<void>(L, "gen_error") [ adopt(result) ]; }
-		catch (luabind::error&)
+		try { call_function<void, adopt_policy<0>>(L, "gen_error"); }
+		catch (luabind::error const& e)
 		{
             bool result(
-                lua_tostring(L, -1) == std::string("[string \"function "
+                e.what() == std::string("[string \"function "
                     "gen_error()...\"]:2: assertion failed!"));
 			TEST_CHECK(result);
-			lua_pop(L, 1);
 		}
 	}
 
@@ -301,13 +298,13 @@ void test_main(lua_State* L)
 			);
 	}
 
-	std::auto_ptr<base> own_ptr;
+	std::unique_ptr<base> own_ptr;
 	{
 		LUABIND_CHECK_STACK(L);
 
 		TEST_NOTHROW(
-		    own_ptr = std::auto_ptr<base>(
-                call_function<base*>(L, "make_derived") [ adopt(result) ])
+		    own_ptr = std::unique_ptr<base>(
+                call_function<base*,adopt_policy<0>>(L, "make_derived"))
 			);
 	}
 
@@ -323,18 +320,18 @@ void test_main(lua_State* L)
     TEST_NOTHROW(
         TEST_CHECK(own_ptr->f() == "derived:f() : base:f()")
     );
-	own_ptr = std::auto_ptr<base>();
+	own_ptr = std::unique_ptr<base>();
 
 	// test virtual functions that are not overridden by lua
     TEST_NOTHROW(
-        own_ptr = std::auto_ptr<base>(
-            call_function<base*>(L, "make_empty_derived") [ adopt(result) ])
+        own_ptr = std::unique_ptr<base>(
+            call_function<base*,adopt_policy<0>>(L, "make_empty_derived"))
         );
     TEST_NOTHROW(
         TEST_CHECK(own_ptr->f() == "base:f()")
 	);
     TEST_NOTHROW(
-        call_function<void>(L, "adopt_ptr", own_ptr.get()) [ adopt(_1) ]
+        (call_function<void,adopt_policy<1>>(L, "adopt_ptr", own_ptr.get()))
     );
 	own_ptr.release();
 

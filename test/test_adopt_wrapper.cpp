@@ -30,9 +30,9 @@ void test_main(lua_State* L)
     using namespace luabind;
 
     module(L) [
-        class_<X, X_wrap>("X"),
-        def("make", &make, adopt(result)),
-        def("take", &take, adopt(_1))
+        class_<X, no_bases, X_wrap>("X"),
+        def("make", &make, adopt_policy<0>()),
+        def("take", &take, adopt_policy<1>())
     ];
 
     DOSTRING(L,

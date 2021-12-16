@@ -2,3 +2,9 @@ bin.v2
 bin
 doc/*.html
 doc/version.rst
+build
+lua
+*.user
+temp
+.vs
+.vscode

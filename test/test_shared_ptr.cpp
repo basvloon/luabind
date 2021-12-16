@@ -15,12 +15,12 @@ struct X
     int value;
 };
 
-int get_value(boost::shared_ptr<X> const& p)
+int get_value(std::shared_ptr<X> const& p)
 {
     return p->value;
 }
 
-boost::shared_ptr<X> filter(boost::shared_ptr<X> const& p)
+std::shared_ptr<X> filter(std::shared_ptr<X> const& p)
 {
     return p;
 }
@@ -45,3 +45,4 @@ void test_main(lua_State* L)
         "assert(x == filter(x))\n"
     );
 }
+
