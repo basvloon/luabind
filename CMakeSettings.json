@@ -2,53 +2,89 @@
   "configurations": [
     {
       "name": "x32-debug",
-      "generator": "Visual Studio 15 2017",
+      "generator": "Ninja",
       "buildRoot": "${projectDir}/temp/x32-debug",
       "cmakeCommandArgs": "",
       "configurationType": "Debug",
       "variables": [
         {
           "name": "LUA_INCLUDE_DIR",
-          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src"
+          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src",
+          "type": "STRING"
         },
         {
           "name": "LUA_LIBRARIES",
-          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src/lua51.lib"
+          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src/lua51.lib",
+          "type": "STRING"
         },
         {
           "name": "LUABIND_INSTALL",
-          "value": "ON"
+          "value": "ON",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${projectDir}/build/debug"
+          "value": "${projectDir}/build/debug",
+          "type": "STRING"
         }
-      ]
+      ],
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "inheritEnvironments": []
     },
     {
       "name": "x32-release",
-      "generator": "Visual Studio 15 2017",
+      "generator": "Ninja",
       "buildRoot": "${projectDir}/temp/x32-release",
       "cmakeCommandArgs": "",
       "configurationType": "Release",
       "variables": [
         {
           "name": "LUA_INCLUDE_DIR",
-          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src"
+          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src",
+          "type": "STRING"
         },
         {
           "name": "LUA_LIBRARIES",
-          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src/lua51.lib"
+          "value": "C:/gitprojects/LuaJIT-2.1.0-beta3/src/lua51.lib",
+          "type": "STRING"
         },
         {
           "name": "LUABIND_INSTALL",
-          "value": "ON"
+          "value": "ON",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_INSTALL_PREFIX",
-          "value": "${projectDir}/build/release"
+          "value": "${projectDir}/build/release",
+          "type": "STRING"
         }
-      ]
+      ],
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "inheritEnvironments": []
+    },
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": []
+    },
+    {
+      "name": "x64-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": []
     }
   ]
 }

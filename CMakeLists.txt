@@ -105,7 +105,7 @@ endif()
 
 include_directories(
 	"${CMAKE_CURRENT_SOURCE_DIR}"
-	${LUA_INCLUDE_DIRS}
+	${LUA_INCLUDE_DIR}
 )
 
 add_subdirectory(src)

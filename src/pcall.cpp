@@ -51,7 +51,7 @@ namespace luabind {
 #if LUA_VERSION_NUM >= 504
 		int nres;
 		int res = lua_resume(L, NULL, nargs, &nres);
-#if LUA_VERSION_NUM >= 502
+#elif LUA_VERSION_NUM >= 502
 		int res = lua_resume(L, NULL, nargs);
 #else
 			int res = lua_resume(L, nargs);
